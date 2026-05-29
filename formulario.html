@@ -1,0 +1,764 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solicitação de Inclusão de Função — Ocupacional</title>
+<style>
+  /* ── RESET / BASE ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: Arial, 'Helvetica Neue', sans-serif;
+    font-size: 14px;
+    background: #f0f4f5;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: #00424b;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .header-logo {
+    font-size: 22px;
+    font-weight: 900;
+    color: #c4d600;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+  }
+  .header-sep { width: 1px; height: 32px; background: rgba(255,255,255,0.2); }
+  .header-title { color: #fff; font-size: 15px; font-weight: 600; }
+  .header-sub { color: rgba(255,255,255,0.65); font-size: 12px; margin-top: 2px; }
+
+  /* ── WRAPPER ── */
+  .wrapper {
+    max-width: 760px;
+    margin: 32px auto 60px;
+    padding: 0 16px;
+  }
+
+  /* ── BANNER INFORMATIVO ── */
+  .info-banner {
+    background: #e8f4f5;
+    border: 1px solid #9ec9cc;
+    border-left: 4px solid #00424b;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #2a5a62;
+  }
+  .info-banner strong { color: #00424b; }
+
+  /* ── CARD ── */
+  .card {
+    background: #fff;
+    border: 1px solid #d0e4e6;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .card-header {
+    background: #00424b;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-header .num {
+    background: #c4d600;
+    color: #00424b;
+    font-weight: 900;
+    font-size: 12px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .card-header h2 {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .card-body { padding: 20px; }
+
+  /* ── FORMULÁRIO ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 580px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #00424b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 5px;
+  }
+  label .req { color: #c0392b; margin-left: 2px; }
+  label .opt { color: #888; font-weight: 400; text-transform: none; font-size: 11px; letter-spacing: 0; }
+
+  input[type="text"], input[type="email"], input[type="tel"], textarea, select {
+    width: 100%;
+    border: 1px solid #b8d4d7;
+    border-radius: 5px;
+    padding: 9px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #1a1a1a;
+    background: #fff;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: #00424b;
+    box-shadow: 0 0 0 3px rgba(0,66,75,0.08);
+  }
+  input.error, textarea.error { border-color: #c0392b; }
+  textarea { resize: vertical; line-height: 1.5; }
+  .char-count { text-align: right; font-size: 11px; color: #888; margin-top: 3px; }
+
+  /* ── UPLOAD ── */
+  .upload-area {
+    border: 2px dashed #9ec9cc;
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    background: #f7fbfb;
+    transition: all 0.15s;
+  }
+  .upload-area:hover, .upload-area.drag-over {
+    border-color: #00424b;
+    background: #e8f4f5;
+  }
+  .upload-area .icon { font-size: 28px; margin-bottom: 6px; }
+  .upload-area p { font-size: 13px; color: #4a7a7e; }
+  .upload-area small { font-size: 11px; color: #888; }
+  #file-input { display: none; }
+  .file-list { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+  .file-item {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #e8f4f5; border: 1px solid #9ec9cc;
+    border-radius: 4px; padding: 6px 10px; font-size: 12px;
+  }
+  .file-item .name { color: #00424b; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%; }
+  .file-item .size { color: #888; font-size: 11px; }
+  .file-item .remove { cursor: pointer; color: #888; font-size: 16px; line-height: 1; margin-left: 8px; }
+  .file-item .remove:hover { color: #c0392b; }
+
+  /* ── QUESTIONÁRIO ── */
+  .q-block {
+    border: 1px solid #d0e4e6;
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    background: #fafefe;
+  }
+  .q-block:last-child { margin-bottom: 0; }
+  .q-head { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+  .q-num {
+    background: #00424b; color: #c4d600;
+    font-weight: 900; font-size: 11px;
+    min-width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .q-text { flex: 1; }
+  .q-title { font-size: 13px; font-weight: 700; color: #1a1a1a; line-height: 1.4; }
+  .q-desc { font-size: 12px; color: #555; margin-top: 4px; line-height: 1.5; }
+  .q-hint { font-size: 11px; color: #4a7a7e; font-style: italic; margin-top: 3px; line-height: 1.4; }
+
+  .radio-row { display: flex; gap: 20px; flex-wrap: wrap; }
+  .radio-col { display: flex; flex-direction: column; gap: 8px; }
+  .radio-opt, .check-opt {
+    display: flex; align-items: flex-start; gap: 8px;
+    cursor: pointer; font-size: 13px;
+  }
+  .radio-opt input, .check-opt input { margin-top: 2px; cursor: pointer; accent-color: #00424b; }
+  .check-opt label { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 13px; color: #1a1a1a; cursor: pointer; }
+
+  .sub-field {
+    margin-top: 10px; margin-left: 30px;
+    padding: 10px 12px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    display: none;
+  }
+  .sub-field.visible { display: block; }
+  .sub-field label { color: #856404; }
+  .sub-field p { font-size: 12px; color: #856404; font-style: italic; margin-bottom: 8px; }
+
+  .bio-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+
+  /* ── OBS LEGAIS ── */
+  .obs-box {
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #5d4037;
+  }
+  .obs-box p { margin-bottom: 6px; }
+  .obs-box p:last-child { margin-bottom: 0; }
+
+  /* ── SUBMIT ── */
+  .submit-area { text-align: center; margin-top: 28px; }
+  .btn-submit {
+    background: #00424b;
+    color: #fff;
+    border: none;
+    padding: 14px 48px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .btn-submit:hover:not(:disabled) { background: #005d6b; }
+  .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-submit .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  .btn-submit.loading .spinner { display: block; }
+  .btn-submit.loading .btn-text { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg {
+    background: #fdecea; border: 1px solid #f5c6cb;
+    border-radius: 5px; padding: 10px 14px;
+    color: #721c24; font-size: 13px; font-weight: 600;
+    margin-bottom: 16px; display: none;
+  }
+
+  /* ── TELA DE SUCESSO ── */
+  #success-screen {
+    display: none;
+    text-align: center;
+    padding: 60px 24px;
+    background: #fff;
+    border: 1px solid #d0e4e6;
+    border-radius: 8px;
+  }
+  .success-icon { font-size: 64px; margin-bottom: 20px; }
+  .success-title { font-size: 24px; font-weight: 900; color: #00424b; margin-bottom: 8px; }
+  .success-sub { font-size: 15px; color: #4a7a7e; margin-bottom: 24px; line-height: 1.6; }
+  .protocolo-badge {
+    display: inline-block;
+    background: #e8f4f5; border: 1px solid #9ec9cc;
+    border-radius: 6px; padding: 10px 24px;
+    font-family: monospace; font-size: 18px; font-weight: 700;
+    color: #00424b; letter-spacing: 1px;
+    margin-bottom: 24px;
+  }
+  .success-note { font-size: 13px; color: #666; max-width: 480px; margin: 0 auto; }
+
+  /* ── FOOTER ── */
+  .page-footer {
+    text-align: center; font-size: 11px; color: #888;
+    padding: 20px; margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- CONFIGURAÇÃO — altere BACKEND_URL para a URL do servidor -->
+<script>
+  const BACKEND_URL = "/submit";
+</script>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">Ocupacional</div>
+  <div class="header-sep"></div>
+  <div>
+    <div class="header-title">Solicitação de Inclusão de Função</div>
+    <div class="header-sub">Preencha todos os campos obrigatórios para criação do cargo no sistema</div>
+  </div>
+</div>
+
+<div class="wrapper">
+
+  <!-- BANNER -->
+  <div class="info-banner">
+    <strong>Como funciona:</strong> após o envio deste formulário, nossa equipe técnica irá cadastrar o novo cargo no sistema SOC, configurar os riscos e exames ocupacionais conforme as informações fornecidas. O prazo de atendimento é de <strong>até 30 dias corridos</strong>.
+  </div>
+
+  <!-- TELA DE SUCESSO -->
+  <div id="success-screen">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Solicitação enviada com sucesso!</div>
+    <div class="success-sub">Sua solicitação foi recebida e uma tarefa foi criada para a equipe técnica da Ocupacional.<br>Guarde o número de protocolo abaixo para acompanhamento.</div>
+    <div class="protocolo-badge" id="protocolo-display">—</div>
+    <div class="success-note">Em caso de dúvidas, entre em contato informando este protocolo.<br>Prazo de atendimento: <strong>até 30 dias corridos</strong>.</div>
+  </div>
+
+  <!-- FORMULÁRIO -->
+  <form id="main-form">
+
+    <!-- CARD 1: IDENTIFICAÇÃO -->
+    <div class="card">
+      <div class="card-header">
+        <div class="num">1</div>
+        <h2>Identificação da Empresa</h2>
+      </div>
+      <div class="card-body">
+        <div class="grid-2">
+          <div class="field">
+            <label for="cnpj">CNPJ <span class="opt">(opcional)</span></label>
+            <input type="text" id="cnpj" name="cnpj" placeholder="00.000.000/0000-00" maxlength="18">
+          </div>
+          <div class="field">
+            <label for="solicitante_nome">Nome do solicitante <span class="req">*</span></label>
+            <input type="text" id="solicitante_nome" name="solicitante_nome" placeholder="Seu nome completo">
+          </div>
+          <div class="field">
+            <label for="solicitante_email">E-mail do solicitante <span class="req">*</span></label>
+            <input type="email" id="solicitante_email" name="solicitante_email" placeholder="email@empresa.com.br">
+          </div>
+          <div class="field">
+            <label for="solicitante_telefone">Telefone / WhatsApp <span class="opt">(opcional)</span></label>
+            <input type="tel" id="solicitante_telefone" name="solicitante_telefone" placeholder="(00) 00000-0000">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 2: DADOS DO CARGO -->
+    <div class="card">
+      <div class="card-header">
+        <div class="num">2</div>
+        <h2>Dados do Cargo</h2>
+      </div>
+      <div class="card-body">
+        <div class="grid-2">
+          <div class="field">
+            <label for="unidade_nome">Unidade <span class="req">*</span></label>
+            <input type="text" id="unidade_nome" name="unidade_nome" placeholder="Nome da unidade ou filial">
+          </div>
+          <div class="field">
+            <label for="setor_nome">Setor <span class="req">*</span></label>
+            <input type="text" id="setor_nome" name="setor_nome" placeholder="Departamento ou setor">
+          </div>
+          <div class="field">
+            <label for="cargo_nome">Cargo / Função a descrever <span class="req">*</span></label>
+            <input type="text" id="cargo_nome" name="cargo_nome" placeholder="Nome do cargo ou função">
+          </div>
+          <div class="field">
+            <label for="ghe">GHE a ser aplicado <span class="opt">(opcional)</span></label>
+            <input type="text" id="ghe" name="ghe" placeholder="Ex: GHE-ADM-01">
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:4px;">
+          <label for="descricao_atividade">Descrição de atividade <span class="req">*</span></label>
+          <textarea id="descricao_atividade" name="descricao_atividade" rows="5" maxlength="999"
+            placeholder="Descreva detalhadamente as atividades que serão exercidas neste cargo..."></textarea>
+          <div class="char-count"><span id="cnt-atividade">0</span>/999</div>
+        </div>
+
+        <div class="field">
+          <label for="descricao_setor">Descrição do setor <span class="opt">(opcional)</span></label>
+          <textarea id="descricao_setor" name="descricao_setor" rows="2" maxlength="100"
+            placeholder="Breve descrição do setor onde o cargo será exercido"></textarea>
+          <div class="char-count"><span id="cnt-setor">0</span>/100</div>
+        </div>
+
+        <div class="field">
+          <label>Fotografias <span class="opt">(opcional — .jpg, .png, .pdf)</span></label>
+          <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+            <div class="icon">📎</div>
+            <p>Clique para selecionar arquivos</p>
+            <small>Fotografias do ambiente, embalagens de produtos químicos, etc.</small>
+          </div>
+          <input type="file" id="file-input" name="fotos" multiple accept=".jpg,.jpeg,.png,.pdf">
+          <div class="file-list" id="file-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 3: QUESTIONÁRIO -->
+    <div class="card">
+      <div class="card-header">
+        <div class="num">3</div>
+        <h2>Questionário Obrigatório</h2>
+      </div>
+      <div class="card-body">
+
+        <!-- P1 -->
+        <div class="q-block">
+          <div class="q-head">
+            <div class="q-num">1</div>
+            <div class="q-text">
+              <div class="q-title">Usa aparelho telefônico do tipo head set?</div>
+              <div class="q-hint">(Ciente que isto acarretará na inclusão do exame de Audiometria)</div>
+            </div>
+          </div>
+          <div class="radio-row">
+            <label class="radio-opt"><input type="radio" name="p1_headset" value="sim"> Sim</label>
+            <label class="radio-opt"><input type="radio" name="p1_headset" value="nao"> Não</label>
+          </div>
+        </div>
+
+        <!-- P2 -->
+        <div class="q-block">
+          <div class="q-head">
+            <div class="q-num">2</div>
+            <div class="q-text">
+              <div class="q-title">Está exposto a ruídos gerados por máquinas e equipamentos?</div>
+              <div class="q-hint">(Ciente que isto acarretará na inclusão do exame de Audiometria)</div>
+            </div>
+          </div>
+          <div class="radio-row">
+            <label class="radio-opt"><input type="radio" name="p2_ruidos" value="sim" onchange="toggleSub('sub-p2', true)"> Sim</label>
+            <label class="radio-opt"><input type="radio" name="p2_ruidos" value="nao" onchange="toggleSub('sub-p2', false)"> Não</label>
+          </div>
+          <div class="sub-field" id="sub-p2">
+            <label for="p2_ruidos_desc">Descrever quais máquinas e/ou equipamentos: <span class="req">*</span></label>
+            <textarea id="p2_ruidos_desc" name="p2_ruidos_desc" rows="2" placeholder="Ex: tornos mecânicos, compressores, prensas..."></textarea>
+          </div>
+        </div>
+
+        <!-- P3 -->
+        <div class="q-block">
+          <div class="q-head">
+            <div class="q-num">3</div>
+            <div class="q-text">
+              <div class="q-title">Realiza trabalho em altura superior a 2 metros?</div>
+              <div class="q-desc">O Trabalho em Altura ocorre em situações onde haja a necessidade de uso de escadas maiores que 2 metros ou caso de ancoragens em sistemas de proteção antiqueda, entre outros.</div>
+              <div class="q-hint">(Ciente que isto acarretará na inclusão dos exames de Hemograma Completo, ECG, EEG, Teste de Romberg, Glicose e Acuidade Visual)</div>
+            </div>
+          </div>
+          <div class="radio-row">
+            <label class="radio-opt"><input type="radio" name="p3_altura" value="sim"> Sim</label>
+            <label class="radio-opt"><input type="radio" name="p3_altura" value="nao"> Não</label>
+          </div>
+        </div>
+
+        <!-- P4 -->
+        <div class="q-block">
+          <div class="q-head">
+            <div class="q-num">4</div>
+            <div class="q-text">
+              <div class="q-title">Realiza trabalho em espaço confinado?</div>
+              <div class="q-desc">Espaços Confinados são locais projetados para a não ocupação humana e com meios limitados de entrada e/ou possuir atmosfera perigosa.</div>
+              <div class="q-hint">(Ciente que isto acarretará na inclusão dos exames de Hemograma Completo, ECG, EEG, Teste de Romberg, Glicose e Acuidade Visual)</div>
+            </div>
+          </div>
+          <div class="radio-row">
+            <label class="radio-opt"><input type="radio" name="p4_confinado" value="sim"> Sim</label>
+            <label class="radio-opt"><input type="radio" name="p4_confinado" value="nao"> Não</label>
+          </div>
+        </div>
+
+        <!-- P5 -->
+        <div class="q-block">
+          <div class="q-head">
+            <div class="q-num">5</div>
+            <div class="q-text">
+              <div class="q-title">Conduz veículos para execução de suas atividades?</div>
+              <div class="q-hint">(Ciente que isto acarretará na inclusão dos exames de Acuidade Visual e Audiometria para veículos de pequeno porte; e exames adicionais como Hemograma Completo, ECG, EEG e Glicose para veículos de grande porte)</div>
+            </div>
+          </div>
+          <div class="radio-col">
+            <label class="radio-opt"><input type="radio" name="p5_veiculos" value="nao"> Não</label>
+            <label class="radio-opt"><input type="radio" name="p5_veiculos" value="sim_pequeno"> Sim, Pequeno Porte</label>
+            <label class="radio-opt"><input type="radio" name="p5_veiculos" value="sim_grande"> Sim, Grande Porte</label>
+          </div>
+        </div>
+
+        <!-- P6 -->
+        <div class="q-block">
+          <div class="q-head">
+            <div class="q-num">6</div>
+            <div class="q-text">
+              <div class="q-title">Faz uso de produtos químicos/produtos de limpeza durante a execução de suas atividades?</div>
+            </div>
+          </div>
+          <div class="radio-row">
+            <label class="radio-opt"><input type="radio" name="p6_quimicos" value="sim" onchange="toggleSub('sub-p6', true)"> Sim</label>
+            <label class="radio-opt"><input type="radio" name="p6_quimicos" value="nao" onchange="toggleSub('sub-p6', false)"> Não</label>
+          </div>
+          <div class="sub-field" id="sub-p6">
+            <p>Se SIM, enviar as FISPQs dos produtos utilizados ou registros fotográficos das embalagens (utilize o campo de fotografias acima).</p>
+            <label for="p6_quimicos_desc">Descrição dos produtos químicos/produtos de limpeza: <span class="req">*</span></label>
+            <textarea id="p6_quimicos_desc" name="p6_quimicos_desc" rows="2" placeholder="Liste os produtos utilizados..."></textarea>
+          </div>
+        </div>
+
+        <!-- P7 -->
+        <div class="q-block">
+          <div class="q-head">
+            <div class="q-num">7</div>
+            <div class="q-text">
+              <div class="q-title">Tem contato com agentes biológicos?</div>
+            </div>
+          </div>
+          <div class="radio-row">
+            <label class="radio-opt"><input type="radio" name="p7_biologicos" value="sim" onchange="toggleSub('sub-p7', true)"> Sim</label>
+            <label class="radio-opt"><input type="radio" name="p7_biologicos" value="nao" onchange="toggleSub('sub-p7', false)"> Não</label>
+          </div>
+          <div class="sub-field" id="sub-p7">
+            <label>Marque as exposições aplicáveis: <span class="req">*</span></label>
+            <div class="bio-list">
+              <label class="check-opt"><input type="checkbox" name="p7_bio_tipos" value="Limpeza de banheiro"><label>Limpeza de banheiro</label></label>
+              <label class="check-opt"><input type="checkbox" name="p7_bio_tipos" value="Pacientes médicos"><label>Pacientes médicos</label></label>
+              <label class="check-opt"><input type="checkbox" name="p7_bio_tipos" value="Clínicas Veterinárias"><label>Clínicas Veterinárias</label></label>
+              <label class="check-opt"><input type="checkbox" name="p7_bio_tipos" value="Esgotos e Galerias"><label>Esgotos e Galerias</label></label>
+              <label class="check-opt"><input type="checkbox" name="p7_bio_tipos" value="Limpeza Urbana"><label>Limpeza Urbana</label></label>
+              <label class="check-opt"><input type="checkbox" name="p7_bio_tipos" value="Laboratórios de análise clínica ou produção de vacinas e insumos médicos"><label>Laboratórios de análise clínica ou produção de vacinas e insumos médicos</label></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- P8 -->
+        <div class="q-block">
+          <div class="q-head">
+            <div class="q-num">8</div>
+            <div class="q-text">
+              <div class="q-title">Faz manipulação de alimentos?</div>
+              <div class="q-hint">(Ciente que isto acarretará na inclusão do exame de EPF e Coprocultura conforme exigência da ANVISA e Vigilância Sanitária)</div>
+            </div>
+          </div>
+          <div class="radio-row">
+            <label class="radio-opt"><input type="radio" name="p8_alimentos" value="sim"> Sim</label>
+            <label class="radio-opt"><input type="radio" name="p8_alimentos" value="nao"> Não</label>
+          </div>
+        </div>
+
+        <!-- P9 -->
+        <div class="q-block">
+          <div class="q-head">
+            <div class="q-num">9</div>
+            <div class="q-text">
+              <div class="q-title">Utiliza equipamento de proteção individual?</div>
+              <div class="q-desc">Se sim, relacionar abaixo com seus devidos Certificados de Aprovação (CAs).</div>
+            </div>
+          </div>
+          <div class="radio-row">
+            <label class="radio-opt"><input type="radio" name="p9_epi" value="sim" onchange="toggleSub('sub-p9', true)"> Sim</label>
+            <label class="radio-opt"><input type="radio" name="p9_epi" value="nao" onchange="toggleSub('sub-p9', false)"> Não</label>
+          </div>
+          <div class="sub-field" id="sub-p9">
+            <label for="p9_epi_lista">Lista de EPIs e respectivos CAs: <span class="req">*</span></label>
+            <textarea id="p9_epi_lista" name="p9_epi_lista" rows="3" placeholder="Ex: Capacete (CA 12345), Luva de Nitrila (CA 67890)..."></textarea>
+          </div>
+        </div>
+
+        <!-- P10 -->
+        <div class="q-block">
+          <div class="q-head">
+            <div class="q-num">10</div>
+            <div class="q-text">
+              <div class="q-title">O cargo receberá adicional de insalubridade, periculosidade e/ou Aposentadoria Especial?</div>
+            </div>
+          </div>
+          <div class="radio-col">
+            <label class="radio-opt"><input type="radio" name="p10_adicional" value="sim" onchange="toggleSub('sub-p10', true)"> Sim</label>
+            <label class="radio-opt"><input type="radio" name="p10_adicional" value="duvida" onchange="toggleSub('sub-p10', false)"> Tenho dúvida — solicitar contato do técnico responsável pela empresa.</label>
+            <label class="radio-opt"><input type="radio" name="p10_adicional" value="nao" onchange="toggleSub('sub-p10', false)"> Não</label>
+          </div>
+          <div class="sub-field" id="sub-p10">
+            <label for="p10_adicional_motivo">Por qual motivo: <span class="req">*</span></label>
+            <textarea id="p10_adicional_motivo" name="p10_adicional_motivo" rows="2" placeholder="Descreva o motivo do adicional..."></textarea>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- OBS LEGAIS -->
+    <div class="obs-box">
+      <p><strong>Obs. 1</strong> — As informações solicitadas neste formulário são as mínimas necessárias para o atendimento completo dos eventos do eSocial referente a SST (Saúde e Segurança do Trabalho) de S-2220 e S-2240. O não preenchimento completo implicará em falta de informações e possivelmente inconsistências no momento de envio para o ambiente do eSocial.</p>
+      <p><strong>Obs. 2</strong> — Em caso de exposição a produtos químicos, sugerimos o fornecimento das FDS (Fichas de Segurança) dos produtos utilizados para melhor avaliação dos riscos químicos e, consequentemente, a correta solicitação de exames ocupacionais.</p>
+      <p><strong>Obs. 3</strong> — A Ocupacional não se responsabiliza pelas informações prestadas neste formulário de forma incompleta.</p>
+    </div>
+
+    <!-- ERRO -->
+    <div class="error-msg" id="error-msg"></div>
+
+    <!-- SUBMIT -->
+    <div class="submit-area">
+      <button type="submit" class="btn-submit" id="btn-submit">
+        <div class="spinner"></div>
+        <span class="btn-text">📤 Enviar Solicitação</span>
+      </button>
+    </div>
+
+  </form>
+
+  <div class="page-footer">
+    Grupo Ocupacional · Saúde e Segurança do Trabalho · suporteengenharia@ocupacional.com.br
+  </div>
+
+</div><!-- /wrapper -->
+
+<script>
+  // ── Máscara CNPJ
+  document.getElementById('cnpj').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g, '').slice(0, 14);
+    if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/, '$1.$2.$3/$4-$5');
+    else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})/, '$1.$2.$3/$4');
+    else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{0,3})/, '$1.$2.$3');
+    else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,3})/, '$1.$2');
+    this.value = v;
+  });
+
+  // ── Contadores de caracteres
+  document.getElementById('descricao_atividade').addEventListener('input', function() {
+    document.getElementById('cnt-atividade').textContent = this.value.length;
+  });
+  document.getElementById('descricao_setor').addEventListener('input', function() {
+    document.getElementById('cnt-setor').textContent = this.value.length;
+  });
+
+  // ── Upload de arquivos
+  const fileInput = document.getElementById('file-input');
+  const fileList  = document.getElementById('file-list');
+  const uploadArea = document.getElementById('upload-area');
+  let selectedFiles = [];
+
+  fileInput.addEventListener('change', function() {
+    Array.from(this.files).forEach(addFile);
+    this.value = '';
+  });
+
+  uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault(); uploadArea.classList.remove('drag-over');
+    Array.from(e.dataTransfer.files).forEach(addFile);
+  });
+
+  function addFile(file) {
+    if (selectedFiles.find(f => f.name === file.name && f.size === file.size)) return;
+    selectedFiles.push(file);
+    renderFiles();
+  }
+
+  function renderFiles() {
+    fileList.innerHTML = '';
+    selectedFiles.forEach((f, i) => {
+      const item = document.createElement('div');
+      item.className = 'file-item';
+      item.innerHTML = `<span class="name">${f.name}</span><span class="size">${(f.size/1024).toFixed(0)} KB</span><span class="remove" onclick="removeFile(${i})">×</span>`;
+      fileList.appendChild(item);
+    });
+  }
+
+  function removeFile(idx) {
+    selectedFiles.splice(idx, 1);
+    renderFiles();
+  }
+
+  // ── Mostrar/ocultar sub-campos condicionais
+  function toggleSub(id, show) {
+    document.getElementById(id).classList.toggle('visible', show);
+  }
+
+  // ── Validação
+  function getVal(name) {
+    const el = document.querySelector(`[name="${name}"]:checked`);
+    return el ? el.value : null;
+  }
+
+  function validate() {
+    const f = Object.fromEntries(new FormData(document.getElementById('main-form')));
+    if (!f.solicitante_nome?.trim()) return 'Informe o nome do solicitante.';
+    if (!f.solicitante_email?.trim()) return 'Informe o e-mail do solicitante.';
+    if (!f.unidade_nome?.trim()) return 'Informe a Unidade.';
+    if (!f.setor_nome?.trim()) return 'Informe o Setor.';
+    if (!f.cargo_nome?.trim()) return 'Informe o Cargo / Função.';
+    if (!f.descricao_atividade?.trim()) return 'Informe a descrição de atividade.';
+
+    if (!getVal('p1_headset')) return 'Responda P1: Aparelho head set.';
+    if (!getVal('p2_ruidos')) return 'Responda P2: Exposição a ruídos.';
+    if (getVal('p2_ruidos') === 'sim' && !f.p2_ruidos_desc?.trim()) return 'Descreva as máquinas/equipamentos (P2).';
+    if (!getVal('p3_altura')) return 'Responda P3: Trabalho em altura.';
+    if (!getVal('p4_confinado')) return 'Responda P4: Espaço confinado.';
+    if (!getVal('p5_veiculos')) return 'Responda P5: Conduz veículos.';
+    if (!getVal('p6_quimicos')) return 'Responda P6: Produtos químicos.';
+    if (getVal('p6_quimicos') === 'sim' && !f.p6_quimicos_desc?.trim()) return 'Descreva os produtos químicos (P6).';
+    if (!getVal('p7_biologicos')) return 'Responda P7: Agentes biológicos.';
+    if (getVal('p7_biologicos') === 'sim') {
+      const checked = document.querySelectorAll('[name="p7_bio_tipos"]:checked');
+      if (!checked.length) return 'Selecione ao menos uma exposição biológica (P7).';
+    }
+    if (!getVal('p8_alimentos')) return 'Responda P8: Manipulação de alimentos.';
+    if (!getVal('p9_epi')) return 'Responda P9: Uso de EPI.';
+    if (getVal('p9_epi') === 'sim' && !f.p9_epi_lista?.trim()) return 'Liste os EPIs e CAs (P9).';
+    if (!getVal('p10_adicional')) return 'Responda P10: Adicional/insalubridade.';
+    if (getVal('p10_adicional') === 'sim' && !f.p10_adicional_motivo?.trim()) return 'Informe o motivo do adicional (P10).';
+
+    return null;
+  }
+
+  // ── SUBMIT
+  document.getElementById('main-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const errMsg = validate();
+    const errorDiv = document.getElementById('error-msg');
+    if (errMsg) {
+      errorDiv.textContent = '⚠️ ' + errMsg;
+      errorDiv.style.display = 'block';
+      errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    errorDiv.style.display = 'none';
+
+    const btn = document.getElementById('btn-submit');
+    btn.disabled = true;
+    btn.classList.add('loading');
+
+    try {
+      const formData = new FormData(this);
+      // Adicionar arquivos manualmente (podem ter sido arrastados)
+      formData.delete('fotos');
+      selectedFiles.forEach(f => formData.append('fotos', f));
+
+      const resp = await fetch(BACKEND_URL, { method: 'POST', body: formData });
+      const data = await resp.json();
+
+      if (!resp.ok || data.erro) {
+        throw new Error(data.erro || `Erro ${resp.status}`);
+      }
+
+      // Sucesso
+      document.getElementById('main-form').style.display = 'none';
+      document.querySelector('.info-banner').style.display = 'none';
+      document.getElementById('protocolo-display').textContent = data.protocolo;
+      document.getElementById('success-screen').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (err) {
+      errorDiv.textContent = '❌ Erro ao enviar: ' + err.message;
+      errorDiv.style.display = 'block';
+      errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    }
+  });
+</script>
+</body>
+</html>

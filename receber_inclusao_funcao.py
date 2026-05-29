@@ -11,7 +11,7 @@ Uploads: /tmp/uploads/{protocolo}/ (ephemeral — nomes ficam nas anotações da
 import os, sys, time, random, string, requests
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -182,7 +182,7 @@ CORS(app)
 
 @app.route('/', methods=['GET'])
 def index():
-    return jsonify({'status': 'Ocupacional — Inclusão de Função API', 'version': '1.0'})
+    return send_file('formulario.html')
 
 @app.route('/health', methods=['GET'])
 def health():
