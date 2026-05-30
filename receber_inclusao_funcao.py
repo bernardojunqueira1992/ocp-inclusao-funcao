@@ -316,7 +316,8 @@ def html_confirmacao_cliente(d, protocolo):
     <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px">
       <tr style="background:#f5f5f5"><td style="padding:7px 12px;color:#555;width:40%">Cargo / Função</td><td style="padding:7px 12px">{cargo}</td></tr>
       <tr style="background:#fff"><td style="padding:7px 12px;color:#555">Unidade</td><td style="padding:7px 12px">{unidade}</td></tr>
-      <tr style="background:#f5f5f5"><td style="padding:7px 12px;color:#555">Prazo de atendimento</td><td style="padding:7px 12px"><strong>Até 30 dias corridos</strong></td></tr>
+      <tr style="background:#f5f5f5"><td style="padding:7px 12px;color:#555">Função no sistema</td><td style="padding:7px 12px"><strong>Até 4 horas úteis</strong></td></tr>
+      <tr style="background:#fff"><td style="padding:7px 12px;color:#555">Revisão documental (PGR / PCMSO)</td><td style="padding:7px 12px"><strong>Até 30 dias corridos</strong></td></tr>
     </table>
     <p style="font-size:13px;color:#555">Em caso de dúvidas, entre em contato informando o número do protocolo acima:<br>
       <a href="mailto:suporteengenharia@ocupacional.com.br" style="color:#00424b">suporteengenharia@ocupacional.com.br</a>
