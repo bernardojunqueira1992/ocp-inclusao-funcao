@@ -10,7 +10,7 @@ Mudanças v2:
 - Log de todas as submissões em /data/log.jsonl (Railway Volume)
 """
 
-import os, time, json, fcntl, requests
+import os, time, json, fcntl, base64, mimetypes, requests
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from flask import Flask, request, jsonify, send_file
@@ -26,8 +26,9 @@ CLIENT_SECRET = os.environ['CLIENT_SECRET']
 PLAN_ID       = os.environ['PLAN_ID']
 BUCKET_ID     = os.environ['BUCKET_ID']
 
-FROM_EMAIL   = 'bernardojunqueira@ocupacional.com.br'
-NOTIFY_EMAIL = 'gruposuporteengenharia@ocupacional.com.br'
+FROM_EMAIL        = 'bernardojunqueira@ocupacional.com.br'
+NOTIFY_EMAIL      = 'gruposuporteengenharia@ocupacional.com.br'
+SUPORTE_TELEFONE  = '(31) 3337-1919 — ao atender, selecionar a opção da URA para falar com o time de Engenharia'
 
 ASSIGNED_USERS = {
     'ac48b66a-2848-4bc9-94c6-6f2510a8c406': 'Júlia Ramos - ENG',
@@ -236,18 +237,34 @@ def criar_tarefa_planner(d, protocolo, anotacoes):
 # E-MAILS VIA GRAPH API
 # ─────────────────────────────────────────────────────────────────────────────
 
-def enviar_email(para: list[str], assunto: str, html_body: str):
-    """Envia e-mail via Graph API usando bernardojunqueira@ como remetente."""
-    payload = {
-        'message': {
-            'subject': assunto,
-            'body': {'contentType': 'HTML', 'content': html_body},
-            'toRecipients': [{'emailAddress': {'address': e}} for e in para],
-        },
-        'saveToSentItems': False,
+def enviar_email(para: list[str], assunto: str, html_body: str, arquivos: list[Path] | None = None):
+    """Envia e-mail via Graph API. Arquivos (Path) são anexados se < 4 MB cada."""
+    message: dict = {
+        'subject': assunto,
+        'body': {'contentType': 'HTML', 'content': html_body},
+        'toRecipients': [{'emailAddress': {'address': e}} for e in para],
     }
+    if arquivos:
+        anexos = []
+        for p in arquivos:
+            if not p.exists():
+                continue
+            tamanho = p.stat().st_size
+            if tamanho > 4_000_000:
+                print(f'[AVISO] Arquivo {p.name} ignorado no e-mail (>{tamanho//1024}KB > 4MB)')
+                continue
+            mime = mimetypes.guess_type(p.name)[0] or 'application/octet-stream'
+            anexos.append({
+                '@odata.type': '#microsoft.graph.fileAttachment',
+                'name': p.name,
+                'contentType': mime,
+                'contentBytes': base64.b64encode(p.read_bytes()).decode(),
+            })
+        if anexos:
+            message['attachments'] = anexos
     try:
-        gh_post(f'https://graph.microsoft.com/v1.0/users/{FROM_EMAIL}/sendMail', payload)
+        gh_post(f'https://graph.microsoft.com/v1.0/users/{FROM_EMAIL}/sendMail',
+                {'message': message, 'saveToSentItems': False})
     except Exception as e:
         print(f'[AVISO] Falha ao enviar e-mail para {para}: {e}')
 
@@ -319,9 +336,11 @@ def html_confirmacao_cliente(d, protocolo):
       <tr style="background:#f5f5f5"><td style="padding:7px 12px;color:#555">Função no sistema</td><td style="padding:7px 12px"><strong>Até 4 horas úteis</strong></td></tr>
       <tr style="background:#fff"><td style="padding:7px 12px;color:#555">Revisão documental (PGR / PCMSO)</td><td style="padding:7px 12px"><strong>Até 30 dias corridos</strong></td></tr>
     </table>
-    <p style="font-size:13px;color:#555">Em caso de dúvidas, entre em contato informando o número do protocolo acima:<br>
-      <a href="mailto:suporteengenharia@ocupacional.com.br" style="color:#00424b">suporteengenharia@ocupacional.com.br</a>
-    </p>
+    <p style="font-size:13px;color:#555">Em caso de dúvidas, entre em contato informando o número do protocolo acima:</p>
+    <table style="margin-top:10px;font-size:13px">
+      <tr><td style="color:#555;padding:3px 12px 3px 0">E-mail</td><td><a href="mailto:suporteengenharia@ocupacional.com.br" style="color:#00424b">suporteengenharia@ocupacional.com.br</a></td></tr>
+      <tr><td style="color:#555;padding:3px 12px 3px 0;vertical-align:top">Telefone</td><td>{SUPORTE_TELEFONE}</td></tr>
+    </table>
   </div>
   <p style="font-size:11px;color:#999;text-align:center;margin-top:12px">Grupo Ocupacional · Saúde e Segurança do Trabalho</p>
 </div>"""
@@ -358,8 +377,9 @@ def submit():
 
         protocolo = next_protocolo()
 
-        # Salva arquivos em /tmp
+        # Salva arquivos em /tmp e coleta os Path objetos para anexo no e-mail
         arquivos_salvos = []
+        arquivos_paths  = []
         fotos = request.files.getlist('fotos')
         if fotos and fotos[0].filename:
             pasta = UPLOADS_DIR / protocolo.replace('/', '-')
@@ -367,8 +387,10 @@ def submit():
             for f in fotos:
                 if f.filename:
                     nome = ''.join(c for c in f.filename if c.isalnum() or c in '._- ')
-                    f.save(str(pasta / nome))
+                    caminho = pasta / nome
+                    f.save(str(caminho))
                     arquivos_salvos.append(nome)
+                    arquivos_paths.append(caminho)
 
         anotacoes = formatar_anotacoes(d_flat, protocolo, arquivos_salvos)
         task_id   = criar_tarefa_planner(d_flat, protocolo, anotacoes)
@@ -380,6 +402,7 @@ def submit():
             [NOTIFY_EMAIL],
             f'Nova Solicitação de Inclusão de Função — {protocolo}',
             html_notificacao_interna(d_flat, protocolo, task_id),
+            arquivos=arquivos_paths,
         )
         cliente_email = d_flat.get('solicitante_email', '').strip()
         if cliente_email:
