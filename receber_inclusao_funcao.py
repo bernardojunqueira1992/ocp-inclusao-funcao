@@ -159,7 +159,7 @@ def gh_post(url, body):
     h = {'Authorization': f'Bearer {get_token()}', 'Content-Type': 'application/json'}
     r = requests.post(url, headers=h, json=body, timeout=30)
     r.raise_for_status()
-    return r.json()
+    return r.json() if r.content else {}
 
 def gh_get(url):
     h = {'Authorization': f'Bearer {get_token()}'}
