@@ -26,9 +26,10 @@ CLIENT_SECRET = os.environ['CLIENT_SECRET']
 PLAN_ID       = os.environ['PLAN_ID']
 BUCKET_ID     = os.environ['BUCKET_ID']
 
-FROM_EMAIL        = 'bernardojunqueira@ocupacional.com.br'
+FROM_EMAIL        = 'suporteengenharia@ocupacional.com.br'
 NOTIFY_EMAIL      = 'gruposuporteengenharia@ocupacional.com.br'
 SUPORTE_TELEFONE  = '(31) 3337-1919 — ao atender, selecionar a opção da URA para falar com o time de Engenharia'
+BASE_URL          = 'https://inclusaodefuncaoocupacional.up.railway.app'
 
 ASSIGNED_USERS = {
     'ac48b66a-2848-4bc9-94c6-6f2510a8c406': 'Júlia Ramos - ENG',
@@ -69,22 +70,70 @@ def next_protocolo() -> str:
 # LOG DE SUBMISSÕES — Railway Volume (/data/log.jsonl)
 # ─────────────────────────────────────────────────────────────────────────────
 
+LOG_FILE = DATA_DIR / 'log.jsonl'
+
 def registrar_log(protocolo, d, task_id):
     entry = {
-        'protocolo'       : protocolo,
-        'data_hora'       : datetime.now().strftime('%d/%m/%Y %H:%M'),
-        'cnpj'            : d.get('cnpj') or '',
-        'solicitante'     : d.get('solicitante_nome', ''),
-        'email'           : d.get('solicitante_email', ''),
-        'telefone'        : d.get('solicitante_telefone', ''),
-        'unidade'         : d.get('unidade_nome', ''),
-        'setor'           : d.get('setor_nome', ''),
-        'cargo'           : d.get('cargo_nome', ''),
-        'ghe'             : d.get('ghe') or '',
-        'task_id'         : task_id,
+        'protocolo'          : protocolo,
+        'data_hora'          : datetime.now().strftime('%d/%m/%Y %H:%M'),
+        'cnpj'               : d.get('cnpj') or '',
+        'solicitante'        : d.get('solicitante_nome', ''),
+        'email'              : d.get('solicitante_email', ''),
+        'telefone'           : d.get('solicitante_telefone', ''),
+        'unidade'            : d.get('unidade_nome', ''),
+        'setor'              : d.get('setor_nome', ''),
+        'cargo'              : d.get('cargo_nome', ''),
+        'ghe'                : d.get('ghe') or '',
+        'task_id'            : task_id,
+        'acao'               : None,
+        'mensagem_pendencia' : '',
     }
-    with open(DATA_DIR / 'log.jsonl', 'a', encoding='utf-8') as f:
+    with open(LOG_FILE, 'a', encoding='utf-8') as f:
         f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+
+
+def buscar_log(protocolo):
+    """Retorna a última entrada do log.jsonl com o protocolo informado, ou None."""
+    if not LOG_FILE.exists():
+        return None
+    achado = None
+    with open(LOG_FILE, encoding='utf-8') as f:
+        for linha in f:
+            linha = linha.strip()
+            if not linha:
+                continue
+            entry = json.loads(linha)
+            if entry.get('protocolo') == protocolo:
+                achado = entry
+    return achado
+
+
+def atualizar_log(protocolo, **campos):
+    """Reescreve log.jsonl atualizando a última entrada com o protocolo informado."""
+    with open(LOCK_FILE, 'w') as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        try:
+            if not LOG_FILE.exists():
+                return
+            linhas = LOG_FILE.read_text(encoding='utf-8').splitlines()
+            idx_alvo = None
+            entries = []
+            for linha in linhas:
+                if not linha.strip():
+                    continue
+                entries.append(json.loads(linha))
+            for i in range(len(entries) - 1, -1, -1):
+                if entries[i].get('protocolo') == protocolo:
+                    idx_alvo = i
+                    break
+            if idx_alvo is None:
+                return
+            entries[idx_alvo].update(campos)
+            with open(LOG_FILE, 'w', encoding='utf-8') as f:
+                for entry in entries:
+                    f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # GRAPH API — autenticação + helpers
@@ -307,6 +356,14 @@ def html_notificacao_interna(d, protocolo, task_id):
       <tr style="background:#fff"><td style="padding:7px 12px;color:#555;vertical-align:top">Descrição</td><td style="padding:7px 12px">{descr}</td></tr>
     </table>
     <p style="margin:16px 0 0;font-size:12px;color:#555">Prazo de conclusão: <strong>30 dias corridos</strong> a partir de hoje.</p>
+    <table style="width:100%;margin-top:20px"><tr>
+      <td style="padding-right:8px;width:50%">
+        <a href="{BASE_URL}/acao/aprovar/{protocolo}" style="display:block;text-align:center;background:#00424b;color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:12px 8px;border-radius:6px">✅ Função cadastrada</a>
+      </td>
+      <td style="padding-left:8px;width:50%">
+        <a href="{BASE_URL}/acao/pendente/{protocolo}" style="display:block;text-align:center;background:#9ec9cc;color:#00424b;text-decoration:none;font-weight:700;font-size:13px;padding:12px 8px;border-radius:6px">⚠️ Dados incompletos</a>
+      </td>
+    </tr></table>
   </div>
   <p style="font-size:11px;color:#999;text-align:center;margin-top:12px">Grupo Ocupacional · Dashboard SST</p>
 </div>"""
@@ -345,6 +402,101 @@ def html_confirmacao_cliente(d, protocolo):
   <p style="font-size:11px;color:#999;text-align:center;margin-top:12px">Grupo Ocupacional · Saúde e Segurança do Trabalho</p>
 </div>"""
 
+def html_aprovacao_cliente(d, protocolo):
+    nome    = d.get('solicitante_nome') or d.get('solicitante', 'Cliente')
+    cargo   = d.get('cargo_nome') or d.get('cargo', '—')
+    unidade = d.get('unidade_nome') or d.get('unidade', '—')
+
+    return f"""
+<div style="font-family:Arial,sans-serif;font-size:14px;color:#1a1a1a;max-width:580px;margin:0 auto">
+  <div style="background:#00424b;padding:16px 24px;border-radius:6px 6px 0 0">
+    <p style="color:#c4d600;font-size:11px;margin:0;text-transform:uppercase;letter-spacing:1px">Ocupacional</p>
+    <h2 style="color:#fff;margin:4px 0 0;font-size:18px">Função Cadastrada com Sucesso</h2>
+  </div>
+  <div style="background:#e8f4f5;border:1px solid #9ec9cc;border-top:none;padding:24px;border-radius:0 0 6px 6px">
+    <p>Olá, <strong>{nome}</strong>!</p>
+    <p style="margin-top:12px">A função <strong>{cargo}</strong> ({unidade}) já foi cadastrada em nosso sistema. O exame admissional/periódico referente a essa função <strong>já pode ser agendado</strong>.</p>
+    <div style="background:#fff;border:1px solid #9ec9cc;border-radius:6px;padding:16px 20px;margin:20px 0;text-align:center">
+      <p style="font-size:11px;color:#4a7a7e;text-transform:uppercase;letter-spacing:1px;margin:0 0 6px">Número do Protocolo</p>
+      <p style="font-size:24px;font-weight:900;color:#00424b;font-family:monospace;margin:0">{protocolo}</p>
+    </div>
+    <p style="font-size:13px">A documentação técnica (PGR / PCMSO) referente a essa função será atualizada em até <strong>30 dias corridos</strong> a partir de hoje.</p>
+    <p style="font-size:13px;color:#555;margin-top:16px">Em caso de dúvidas, entre em contato informando o número do protocolo acima:</p>
+    <table style="margin-top:10px;font-size:13px">
+      <tr><td style="color:#555;padding:3px 12px 3px 0">E-mail</td><td><a href="mailto:suporteengenharia@ocupacional.com.br" style="color:#00424b">suporteengenharia@ocupacional.com.br</a></td></tr>
+      <tr><td style="color:#555;padding:3px 12px 3px 0;vertical-align:top">Telefone</td><td>{SUPORTE_TELEFONE}</td></tr>
+    </table>
+  </div>
+  <p style="font-size:11px;color:#999;text-align:center;margin-top:12px">Grupo Ocupacional · Saúde e Segurança do Trabalho</p>
+</div>"""
+
+
+def html_pendencia_cliente(d, protocolo, mensagem):
+    nome    = d.get('solicitante_nome') or d.get('solicitante', 'Cliente')
+    cargo   = d.get('cargo_nome') or d.get('cargo', '—')
+    unidade = d.get('unidade_nome') or d.get('unidade', '—')
+    msg     = (mensagem or '').replace('\n', '<br>')
+
+    return f"""
+<div style="font-family:Arial,sans-serif;font-size:14px;color:#1a1a1a;max-width:580px;margin:0 auto">
+  <div style="background:#00424b;padding:16px 24px;border-radius:6px 6px 0 0">
+    <p style="color:#c4d600;font-size:11px;margin:0;text-transform:uppercase;letter-spacing:1px">Ocupacional</p>
+    <h2 style="color:#fff;margin:4px 0 0;font-size:18px">Pendência na Solicitação</h2>
+  </div>
+  <div style="background:#e8f4f5;border:1px solid #9ec9cc;border-top:none;padding:24px;border-radius:0 0 6px 6px">
+    <p>Olá, <strong>{nome}</strong>!</p>
+    <p style="margin-top:12px">Identificamos que a solicitação de inclusão da função <strong>{cargo}</strong> ({unidade}) está com dados incompletos e precisa de um ajuste antes de seguirmos com o cadastro.</p>
+    <div style="background:#fff;border:1px solid #9ec9cc;border-radius:6px;padding:16px 20px;margin:20px 0">
+      <p style="font-size:11px;color:#4a7a7e;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px">O que precisa ser ajustado</p>
+      <p style="font-size:13px;margin:0">{msg}</p>
+    </div>
+    <p style="font-size:13px">Por favor, responda este e-mail ou entre em contato com as informações acima, informando o número do protocolo:</p>
+    <div style="background:#fff;border:1px solid #9ec9cc;border-radius:6px;padding:12px 20px;margin:16px 0;text-align:center">
+      <p style="font-size:18px;font-weight:900;color:#00424b;font-family:monospace;margin:0">{protocolo}</p>
+    </div>
+    <table style="margin-top:10px;font-size:13px">
+      <tr><td style="color:#555;padding:3px 12px 3px 0">E-mail</td><td><a href="mailto:suporteengenharia@ocupacional.com.br" style="color:#00424b">suporteengenharia@ocupacional.com.br</a></td></tr>
+      <tr><td style="color:#555;padding:3px 12px 3px 0;vertical-align:top">Telefone</td><td>{SUPORTE_TELEFONE}</td></tr>
+    </table>
+  </div>
+  <p style="font-size:11px;color:#999;text-align:center;margin-top:12px">Grupo Ocupacional · Saúde e Segurança do Trabalho</p>
+</div>"""
+
+
+def pagina_html(titulo, mensagem, cor_titulo='#00424b'):
+    return f"""<!DOCTYPE html>
+<html lang="pt-br"><head><meta charset="utf-8"><title>{titulo}</title></head>
+<body style="font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:40px 16px">
+  <div style="max-width:480px;margin:0 auto;background:#fff;border:1px solid #9ec9cc;border-radius:8px;overflow:hidden">
+    <div style="background:{cor_titulo};padding:16px 24px">
+      <h2 style="color:#fff;margin:0;font-size:18px">{titulo}</h2>
+    </div>
+    <div style="padding:24px;font-size:14px;color:#1a1a1a">{mensagem}</div>
+  </div>
+</body></html>"""
+
+
+def pagina_form_pendencia(protocolo, d):
+    cargo   = d.get('cargo_nome') or d.get('cargo', '—')
+    unidade = d.get('unidade_nome') or d.get('unidade', '—')
+    return f"""<!DOCTYPE html>
+<html lang="pt-br"><head><meta charset="utf-8"><title>Dados incompletos — {protocolo}</title></head>
+<body style="font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:40px 16px">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #9ec9cc;border-radius:8px;overflow:hidden">
+    <div style="background:#00424b;padding:16px 24px">
+      <h2 style="color:#fff;margin:0;font-size:18px">Dados Incompletos — {protocolo}</h2>
+    </div>
+    <div style="padding:24px;font-size:14px;color:#1a1a1a">
+      <p><strong>Cargo:</strong> {cargo} &nbsp;·&nbsp; <strong>Unidade:</strong> {unidade}</p>
+      <p>Descreva o que está faltando ou precisa ser corrigido. Este texto será enviado por e-mail ao cliente.</p>
+      <form method="POST" action="/acao/pendente/{protocolo}">
+        <textarea name="mensagem" required rows="6" style="width:100%;box-sizing:border-box;padding:10px;font-size:14px;border:1px solid #9ec9cc;border-radius:6px;font-family:Arial,sans-serif" placeholder="Ex.: Favor informar a descrição completa das atividades e reenviar a foto do posto de trabalho."></textarea>
+        <button type="submit" style="margin-top:16px;background:#00424b;color:#fff;border:none;padding:12px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer">Enviar e-mail ao cliente</button>
+      </form>
+    </div>
+  </div>
+</body></html>"""
+
 # ─────────────────────────────────────────────────────────────────────────────
 # FLASK APP
 # ─────────────────────────────────────────────────────────────────────────────
@@ -360,6 +512,52 @@ def index():
 def health():
     counter = json.loads(COUNTER_FILE.read_text()) if COUNTER_FILE.exists() else {'n': 0}
     return jsonify({'status': 'ok', 'total_solicitacoes': counter['n']})
+
+
+@app.route('/acao/aprovar/<protocolo>', methods=['GET'])
+def acao_aprovar(protocolo):
+    d = buscar_log(protocolo)
+    if not d:
+        return pagina_html('Protocolo não encontrado', f'Nenhuma solicitação encontrada com o protocolo <strong>{protocolo}</strong>.', '#9ec9cc'), 404
+    if d.get('acao'):
+        return pagina_html('Já processado', f'Esta solicitação já foi marcada como <strong>{d["acao"]}</strong> anteriormente. Nenhuma ação adicional foi tomada.', '#9ec9cc')
+
+    cliente_email = (d.get('email') or '').strip()
+    if cliente_email:
+        enviar_email([cliente_email], f'Função cadastrada — Protocolo {protocolo}', html_aprovacao_cliente(d, protocolo))
+
+    atualizar_log(protocolo, acao='aprovado')
+    return pagina_html('Cliente notificado ✅', f'O cliente foi avisado de que a função foi cadastrada.<br><br>Protocolo: <strong>{protocolo}</strong>')
+
+
+@app.route('/acao/pendente/<protocolo>', methods=['GET'])
+def acao_pendente_form(protocolo):
+    d = buscar_log(protocolo)
+    if not d:
+        return pagina_html('Protocolo não encontrado', f'Nenhuma solicitação encontrada com o protocolo <strong>{protocolo}</strong>.', '#9ec9cc'), 404
+    if d.get('acao'):
+        return pagina_html('Já processado', f'Esta solicitação já foi marcada como <strong>{d["acao"]}</strong> anteriormente. Nenhuma ação adicional foi tomada.', '#9ec9cc')
+    return pagina_form_pendencia(protocolo, d)
+
+
+@app.route('/acao/pendente/<protocolo>', methods=['POST'])
+def acao_pendente_enviar(protocolo):
+    d = buscar_log(protocolo)
+    if not d:
+        return pagina_html('Protocolo não encontrado', f'Nenhuma solicitação encontrada com o protocolo <strong>{protocolo}</strong>.', '#9ec9cc'), 404
+    if d.get('acao'):
+        return pagina_html('Já processado', f'Esta solicitação já foi marcada como <strong>{d["acao"]}</strong> anteriormente. Nenhuma ação adicional foi tomada.', '#9ec9cc')
+
+    mensagem = (request.form.get('mensagem') or '').strip()
+    if not mensagem:
+        return pagina_form_pendencia(protocolo, d)
+
+    cliente_email = (d.get('email') or '').strip()
+    if cliente_email:
+        enviar_email([cliente_email], f'Pendência na solicitação — Protocolo {protocolo}', html_pendencia_cliente(d, protocolo, mensagem))
+
+    atualizar_log(protocolo, acao='pendente', mensagem_pendencia=mensagem)
+    return pagina_html('Cliente notificado ⚠️', f'O cliente foi avisado sobre a pendência.<br><br>Protocolo: <strong>{protocolo}</strong>')
 
 @app.route('/submit', methods=['POST'])
 def submit():
