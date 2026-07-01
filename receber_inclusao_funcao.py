@@ -27,7 +27,7 @@ PLAN_ID       = os.environ['PLAN_ID']
 BUCKET_ID     = os.environ['BUCKET_ID']
 
 FROM_EMAIL        = 'suporteengenharia@ocupacional.com.br'
-NOTIFY_EMAIL      = 'gruposuporteengenharia@ocupacional.com.br'
+NOTIFY_EMAILS     = ['suporteengenharia@ocupacional.com.br', 'administrativoengenharia@ocupacional.com.br']
 SUPORTE_TELEFONE  = '(31) 3337-1919 — ao atender, selecionar a opção da URA para falar com o time de Engenharia'
 BASE_URL          = 'https://inclusaodefuncaoocupacional.up.railway.app'
 
@@ -597,7 +597,7 @@ def submit():
 
         # E-mails (não bloqueia em caso de falha)
         enviar_email(
-            [NOTIFY_EMAIL],
+            NOTIFY_EMAILS,
             f'Nova Solicitação de Inclusão de Função — {protocolo}',
             html_notificacao_interna(d_flat, protocolo, task_id),
             arquivos=arquivos_paths,
