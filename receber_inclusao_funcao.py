@@ -10,7 +10,7 @@ Mudanças v2:
 - Log de todas as submissões em /data/log.jsonl (Railway Volume)
 """
 
-import os, time, json, fcntl, base64, mimetypes, requests
+import os, re, time, json, fcntl, base64, mimetypes, requests
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from flask import Flask, request, jsonify, send_file
@@ -567,11 +567,14 @@ def submit():
         if 'p7_bio_tipos' in d:
             d_flat['p7_bio_tipos'] = d['p7_bio_tipos']
 
-        required = ['solicitante_nome', 'solicitante_email', 'solicitante_telefone',
+        required = ['cnpj', 'solicitante_nome', 'solicitante_email', 'solicitante_telefone',
                     'unidade_nome', 'setor_nome', 'cargo_nome', 'descricao_atividade']
         for field in required:
             if not d_flat.get(field, '').strip():
                 return jsonify({'erro': f'Campo obrigatório ausente: {field}'}), 400
+
+        if len(re.sub(r'\D', '', d_flat.get('cnpj', ''))) != 14:
+            return jsonify({'erro': 'CNPJ inválido: informe os 14 dígitos.'}), 400
 
         protocolo = next_protocolo()
 

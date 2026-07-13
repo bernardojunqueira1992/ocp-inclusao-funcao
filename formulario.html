@@ -330,8 +330,8 @@
       <div class="card-body">
         <div class="grid-2">
           <div class="field">
-            <label for="cnpj">CNPJ <span class="opt">(opcional)</span></label>
-            <input type="text" id="cnpj" name="cnpj" placeholder="00.000.000/0000-00" maxlength="18">
+            <label for="cnpj">CNPJ <span class="req">*</span></label>
+            <input type="text" id="cnpj" name="cnpj" placeholder="00.000.000/0000-00" maxlength="18" required>
           </div>
           <div class="field">
             <label for="solicitante_nome">Nome do solicitante <span class="req">*</span></label>
@@ -689,6 +689,8 @@
 
   function validate() {
     const f = Object.fromEntries(new FormData(document.getElementById('main-form')));
+    if (!f.cnpj?.trim()) return 'Informe o CNPJ da empresa.';
+    if (f.cnpj.replace(/\D/g, '').length !== 14) return 'Informe um CNPJ válido (14 dígitos).';
     if (!f.solicitante_nome?.trim()) return 'Informe o nome do solicitante.';
     if (!f.solicitante_email?.trim()) return 'Informe o e-mail do solicitante.';
     if (!f.solicitante_telefone?.trim()) return 'Informe o Telefone / WhatsApp.';
