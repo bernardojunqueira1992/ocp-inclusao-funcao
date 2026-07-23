@@ -592,6 +592,22 @@
       </div>
     </div>
 
+    <!-- CARD 4: OBSERVAÇÕES -->
+    <div class="card">
+      <div class="card-header">
+        <div class="num">4</div>
+        <h2>Observações Adicionais</h2>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label for="observacoes">Observações <span class="opt">(opcional)</span></label>
+          <textarea id="observacoes" name="observacoes" rows="3" maxlength="500"
+            placeholder="Alguma informação adicional que gostaria de registrar sobre esta solicitação?"></textarea>
+          <div class="char-count"><span id="cnt-observacoes">0</span>/500</div>
+        </div>
+      </div>
+    </div>
+
     <!-- OBS LEGAIS -->
     <div class="obs-box">
       <p><strong>Obs. 1</strong> — As informações solicitadas neste formulário são as mínimas necessárias para o atendimento completo dos eventos do eSocial referente a SST (Saúde e Segurança do Trabalho) de S-2220 e S-2240. O não preenchimento completo implicará em falta de informações e possivelmente inconsistências no momento de envio para o ambiente do eSocial.</p>
@@ -635,6 +651,9 @@
   });
   document.getElementById('descricao_setor').addEventListener('input', function() {
     document.getElementById('cnt-setor').textContent = this.value.length;
+  });
+  document.getElementById('observacoes').addEventListener('input', function() {
+    document.getElementById('cnt-observacoes').textContent = this.value.length;
   });
 
   // ── Upload de arquivos

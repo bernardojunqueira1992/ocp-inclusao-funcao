@@ -235,6 +235,10 @@ def formatar_anotacoes(d, protocolo, arquivos):
     if d.get('p10_adicional') == 'sim':
         linhas.append(f'    Motivo                : {d.get("p10_adicional_motivo", "—")}')
 
+    obs = (d.get('observacoes') or '').strip()
+    if obs:
+        linhas += ['', '--- OBSERVAÇÕES DO CLIENTE ---', obs]
+
     linhas += ['', '--- ARQUIVOS RECEBIDOS ---']
     if arquivos:
         linhas.append('Solicitar ao cliente caso necessário:')
@@ -329,6 +333,15 @@ def html_notificacao_interna(d, protocolo, task_id):
     cnpj    = d.get('cnpj') or '—'
     descr   = d.get('descricao_atividade', '—').replace('\n', '<br>')
 
+    obs = (d.get('observacoes') or '').strip()
+    obs_html = ''
+    if obs:
+        obs_html = f'''
+    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:14px 16px;margin-top:16px">
+      <p style="margin:0 0 6px;font-size:11px;color:#856404;text-transform:uppercase;letter-spacing:1px;font-weight:700">⚠️ Observação do cliente</p>
+      <p style="margin:0;font-size:13px;color:#1a1a1a">{obs.replace(chr(10), '<br>')}</p>
+    </div>'''
+
     return f"""
 <div style="font-family:Arial,sans-serif;font-size:14px;color:#1a1a1a;max-width:640px;margin:0 auto">
   <div style="background:#00424b;padding:16px 24px;border-radius:6px 6px 0 0">
@@ -354,7 +367,7 @@ def html_notificacao_interna(d, protocolo, task_id):
       <tr style="background:#fff"><td style="padding:7px 12px;color:#555">Setor</td><td style="padding:7px 12px">{setor}</td></tr>
       <tr style="background:#f5f5f5"><td style="padding:7px 12px;color:#555">GHE</td><td style="padding:7px 12px">{ghe}</td></tr>
       <tr style="background:#fff"><td style="padding:7px 12px;color:#555;vertical-align:top">Descrição</td><td style="padding:7px 12px">{descr}</td></tr>
-    </table>
+    </table>{obs_html}
     <p style="margin:16px 0 0;font-size:12px;color:#555">Prazo de conclusão: <strong>30 dias corridos</strong> a partir de hoje.</p>
     <table style="width:100%;margin-top:20px"><tr>
       <td style="padding-right:8px;width:50%">
